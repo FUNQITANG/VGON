@@ -24,13 +24,18 @@ Repository = "https://github.com/zhangjianjianzz/VGON.git"
 Documentation = "https://vgon.funqitang.cn"
 
 [project.optional-dependencies]
+####if torch: CPU or CUDA
 cuda = [
+    "torch[opt-einsum]>=2.9.0",
+]
+cuda129 = [
     "torch[opt-einsum]>=2.9.0",
 ]
 cpu = [
     "torch[opt-einsum]",
     "typing-extensions>=4.15.0",
 ]
+####endif  torch: CPU or CUDA
 doc = [
     "mdx-truly-sane-lists>=1.3",
     "mkdocs-literate-nav>=0.6.2",
@@ -61,6 +66,7 @@ conflicts = [
     [
         {extra = "cuda"},
         {extra = "cpu"},
+        {extra = "cuda129"},
     ],
 ]
 
@@ -69,7 +75,8 @@ conflicts = [
 # For users outside of CUDA eco, redirect torch.index to "pytorch-cpu"
 torch = [
     { index = "pytorch-cpu", extra = "cpu" },
-    { index = "pytorch-cuda", extra = "cuda" },
+    { index = "pytorch-cuda-130", extra = "cuda" },
+    { index = "pytorch-cuda-129", extra = "cuda129" },
 ]
 mkdocs-material = { git = "https://github.com/squidfunk/mkdocs-material.git" }
 
@@ -80,16 +87,22 @@ ptiprince = { git = "https://github.com/leo2www/PtitPrince.git" }
 vgon = { workspace = true }
 
 
+############
+# CUDA indexes
+############
 [[tool.uv.index]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [[tool.uv.index]]
-name = "pytorch-cuda"
+name = "pytorch-cuda-129"
 url = "https://download.pytorch.org/whl/cu129"
 explicit = true
 
-
+[[tool.uv.index]]
+name = "pytorch-cuda-130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
 
 
