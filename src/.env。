@@ -1,0 +1,5 @@
+TORCH_DEVICE=cuda
+LOG_LEVEL=DEBUG
+RANDOM_SEED=123
+LOG_FORMAT="%(levelname)s[%(process)d:%(threadName)s]%(name)s(%(asctime)s) say %(message)s"
+PROJECT_ROOT_LEVEL=1

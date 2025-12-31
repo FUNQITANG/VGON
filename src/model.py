@@ -20,11 +20,21 @@ limitations under the License.
 from log import LoggingManager
 import logging
 
-log_mgr = LoggingManager("logs/app.log", level=logging.DEBUG)
+# originally log dir
+from pathlib import Path
+current_dir = Path(__file__).parent.resolve()
+log_dir = current_dir / "logs"
+print(f"Log directory: {log_dir}")
+# config manager
+from config import config_instance, LOGS_DIR
+print(f"Config LOGS_DIR: {LOGS_DIR}")
 
+
+log_mgr = LoggingManager(LOGS_DIR / "app.log", level=logging.DEBUG)
 logger = log_mgr.get_logger(__name__)
 logger.info("app start")
 logger.debug("debug message")
+logger.warning(f"warning message {LOGS_DIR}", extra={"log_dir": LOGS_DIR})
 
 # 程序退出时
 log_mgr.shutdown()
