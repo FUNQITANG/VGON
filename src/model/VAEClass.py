@@ -91,7 +91,19 @@ class VAEModel(nn.Module):
         super(VAEModel, self).__init__()
         self.post_sigma = post_sigma
         self.amplify = amplify
-        self.activation = activation
+        self.activation_type = activation
+        self.activate_funcs = dict(
+            relu=F.relu,
+            tanh=F.tanh,
+            sigmoid=F.sigmoid,
+            leaky_relu=F.leaky_relu,
+            selu=F.selu,
+            identity=lambda x: x
+        )
+        self.activation = self.activate_funcs.get(activation, None)     # 初始化时检查，默认运行时不再改变。
+        if self.activation is None:
+            logger.error(f"Unknown activation function: {activation}")
+            raise ValueError(f"Unknown activation function: {activation}")
         self.device = Device
 
         # encoder
@@ -107,35 +119,9 @@ class VAEModel(nn.Module):
 
 
     def encoder(self, x):
-        if self.activation == 'relu':
-            h = F.relu(self.e1[0](x))
-        elif self.activation == 'tanh':
-            h = F.tanh(self.e1[0](x))
-        elif self.activation == 'sigmoid':
-            h = F.sigmoid(self.e1[0](x))
-        elif self.activation == 'leaky_relu':
-            h = F.leaky_relu(self.e1[0](x))
-        elif self.activation == 'selu':
-            h = F.selu(self.e1[0](x))
-        elif self.activation == 'identity':
-            h = self.e1[0](x)
-        else:
-            raise ValueError(f"Unknown activation function: {self.activation}")
+        h = self.activation(self.e1[0](x))
         for i in range(1, len(self.e1)):
-            if self.activation == 'relu':
-                h = F.relu(self.e1[i](h))
-            elif self.activation == 'tanh':
-                h = F.tanh(self.e1[i](h))
-            elif self.activation == 'sigmoid':
-                h = F.sigmoid(self.e1[i](h))
-            elif self.activation == 'leaky_relu':
-                h = F.leaky_relu(self.e1[i](h))
-            elif self.activation == 'selu':
-                h = F.selu(self.e1[i](h))
-            elif self.activation == 'identity':
-                h = self.e1[i](h)
-            else:
-                raise ValueError(f"Unknown activation function: {self.activation}")
+            h = self.activation(self.e1[i](h))
         # get_mean
         mean = self.e2(h)
         # get_variance
@@ -160,35 +146,9 @@ class VAEModel(nn.Module):
         return z
 
     def decoder(self, z):
-        if self.activation == 'relu':
-            out = F.relu(self.d4[0](z))
-        elif self.activation == 'tanh':
-            out = F.tanh(self.d4[0](z))
-        elif self.activation == 'sigmoid':
-            out = F.sigmoid(self.d4[0](z))
-        elif self.activation == 'leaky_relu':
-            out = F.leaky_relu(self.d4[0](z))
-        elif self.activation == 'selu':
-            out = F.selu(self.d4[0](z))
-        elif self.activation == 'identity':
-            out = self.d4[0](z)
-        else:
-            raise ValueError(f"Unknown activation function: {self.activation}")
+        out = self.activation(self.d4[0](z))
         for i in range(1, len(self.d4)):
-            if self.activation == 'relu':
-                out = F.relu(self.d4[i](out))
-            elif self.activation == 'tanh':
-                out = F.tanh(self.d4[i](out))
-            elif self.activation == 'sigmoid':
-                out = F.sigmoid(self.d4[i](out))
-            elif self.activation == 'leaky_relu':
-                out = F.leaky_relu(self.d4[i](out))
-            elif self.activation == 'selu':
-                out = F.selu(self.d4[i](out))
-            elif self.activation == 'identity':
-                out = self.d4[i](out)
-            else:
-                raise ValueError(f"Unknown activation function: {self.activation}")
+            out = self.activation(self.d4[i](out))
         out = self.d5(out)
         return out * self.amplify
 
