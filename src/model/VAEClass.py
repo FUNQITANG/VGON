@@ -38,8 +38,11 @@ except (ImportError, ValueError) as e:
     from logging.handlers import RotatingFileHandler
     simple_logger_str  = "%(asctime)s %(levelname)-8s %(message)s"
     extra_logger_str   = "[%(process)d:%(threadName)s]%(name)s @"
-    current_logger_file = PROJECT_ROOT / "VAEClass_fallback.log"
-    current_logger_size=100 * 1024 * 1024         # 100MB
+    logger_filename     = "VAEClass_fallback"
+    logger_size        =100 * 1024 * 1024         # 100MB
+    logger_file_path     = PROJECT_ROOT / "logs"
+    log_timestamp      = "%Y%m%d_%Hh%M_%S"
+    # log_timestamp      = None
     
     terminal_handler = logging.StreamHandler()
     terminal_handler.setLevel(logging.INFO)
@@ -47,12 +50,21 @@ except (ImportError, ValueError) as e:
         fmt =simple_logger_str ,
         datefmt="%H:%M"))
 
-    file_handler = RotatingFileHandler(
-        filename=current_logger_file, 
-        maxBytes=current_logger_size,
-        backupCount=5,
-        encoding="utf-8"
-    )
+    file_handler = logging.NullHandler()
+    if log_timestamp is None:
+        file_handler = RotatingFileHandler(
+            filename=logger_file_path / (logger_filename + ".log"), 
+            maxBytes=logger_size,
+            backupCount=5,
+            encoding="utf-8"
+        )   # 5 backup if size exceeds, total up tp 500MB log files
+    else:
+        from datetime import datetime
+        logger_file = logger_file_path / (logger_filename + datetime.now().strftime(log_timestamp) + ".log")
+        file_handler = logging.FileHandler(
+            filename=logger_file, 
+            encoding="utf-8"
+        )
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter(
         fmt =extra_logger_str + simple_logger_str, 
@@ -68,8 +80,10 @@ except (ImportError, ValueError) as e:
     DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logger.warning(f"Failed to import configuration from config.py; using local defaults.\n reason: {e}")
 
-logger.info(f"Using device: {DEVICE} (detected locally)")
-logger.info(f"PROJECT_ROOT: {PROJECT_ROOT} (locally determined)")
+logger.info("VAEClass module initialized.")
+logger.info(f"Using device: {DEVICE}")
+logger.info(f"PROJECT_ROOT: {PROJECT_ROOT}")
+logger.info(f"log file path: {logger_file_path}")
 
 
 class VAEModel(nn.Module):
