@@ -70,6 +70,7 @@ except (ImportError, ValueError) as e:
         fmt =extra_logger_str + simple_logger_str, 
         datefmt="%Y-%m-%d %H:%M:%S"))
     
+    logging.shutdown()      # 单模组运行，不应当再有其他同名logger残留，每次运行都新建logger
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)  # 必须设置 logger 本身的级别，否则默认 WARNING 会过滤掉低级别日志
     # 避免重复添加 handler
@@ -86,12 +87,15 @@ logger.info(f"PROJECT_ROOT: {PROJECT_ROOT}")
 logger.info(f"log file path: {logger_file_path}")
 
 
+
 class VAEModel(nn.Module):
     def __init__(self, para_dim, z_dim, h_dim, post_sigma, amplify, activation, Device=DEVICE):
         super(VAEModel, self).__init__()
         self.post_sigma = post_sigma
         self.amplify = amplify
-        self.activation_type = activation
+
+        # activation
+        # self.activation_type = activation
         self.activate_funcs = dict(
             relu=F.relu,
             tanh=F.tanh,
@@ -102,8 +106,9 @@ class VAEModel(nn.Module):
         )
         self.activation = self.activate_funcs.get(activation, None)     # 初始化时检查，默认运行时不再改变。
         if self.activation is None:
-            logger.error(f"Unknown activation function: {activation}")
-            raise ValueError(f"Unknown activation function: {activation}")
+            logger.error(f"Unknown activate function: {activation}. What available: {list(self.activate_funcs.keys())}")
+            raise ValueError(f"Unknown activate function: {activation}")
+        
         self.device = Device
 
         # encoder
@@ -128,16 +133,18 @@ class VAEModel(nn.Module):
         log_var = self.e3(h)  
         return mean, log_var
 
-    def reparameterize(self, mean, log_var, randomness, Display):
+    def reparameterize(self, mean, log_var, randomness, Display=False):
         if randomness:
             eps = torch.randn(log_var.shape) * self.post_sigma
+            logger.debug(f"Reparameterization with randomness.eps {eps} generated.")
             if Display:
-                print("Using stochastic mode, randomness applied.")
+                logger.info("Using stochastic mode, randomness applied.")
             # print("=============eps: ================\n", eps)
         else:
             eps = torch.zeros(log_var.shape)
+            logger.debug(f"Reparameterization without randomness.'eps' set to zeros with size {eps.size()}.")
             if Display:
-                print("Using deterministic mode, no randomness applied.")
+                logger.info("Using deterministic mode, no randomness applied.")
             
         std = torch.exp(log_var).pow(0.5) # square root
         eps = eps.to(self.device)
@@ -158,4 +165,3 @@ class VAEModel(nn.Module):
         out = self.decoder(z)
         return out, mean, log_var
     
-logging.shutdown()
